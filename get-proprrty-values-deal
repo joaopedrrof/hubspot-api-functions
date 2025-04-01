@@ -1,0 +1,57 @@
+import requests
+import os
+
+def main(event):
+
+    oauth_token = os.getenv('your_hubspot_private_app_token')
+    oauth = "Bearer " + oauth_token
+    
+    sales_deal_id = event["inputFields"]["record_id"]
+    properties = [
+        "property_1",
+        "property_2",
+        "property_3",
+        "property_4",
+        "property_5",
+        "property_6",
+        "property_7",
+        "property_8"
+    ]
+    
+    # Construct the properties query parameter string
+    properties_query = "&properties=".join(properties)
+    
+    # HubSpot API endpoint for retrieving deals with specific properties
+    get_api_url = f"https://api.hubapi.com/crm/v3/objects/deals/{sales_deal_id}?properties={properties_query}"
+    
+    # Sending a GET request to retrieve the deal properties
+    headers = {
+        "Authorization": oauth,
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(get_api_url, headers=headers)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        deal_data = response.json()
+        print(f"Deal {sales_deal_id} properties retrieved successfully.")
+        print(deal_data)
+        
+        # Extract and return the specific properties and their values, substituting "n/a" if not found
+        output_fields = {}
+        for prop in properties:
+            output_fields[prop] = deal_data.get('properties', {}).get(prop, "n/a") or "n/a"
+
+        return {
+            "outputFields": output_fields
+        }
+    else:
+        print(f"Failed to retrieve deal {sales_deal_id}. Status code: {response.status_code}")
+        print(response.text)
+        return {
+            "outputFields": {}
+        }
+
+
+
